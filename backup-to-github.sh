@@ -2,7 +2,7 @@
 # backup-to-github.sh
 set -e
 
-BACKUP_DIR="/root/bot-backup"
+BACKUP_DIR="/root/BOT-BACKUP"
 cd "$BACKUP_DIR"
 
 cp /root/CLAUDE.md ./CLAUDE.md 2>/dev/null || true
