@@ -1,0 +1,17 @@
+[Unit]
+Description=Agortex Webhook — форма сайта → Telegram
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/SCRIPTS/agortex-webhook
+Environment="AGORTEX_BOT_TOKEN=ВСТАВИТЬ_ТОКЕН"
+Environment="AGORTEX_CHAT_ID=ВСТАВИТЬ_CHAT_ID"
+Environment="PORT=8080"
+ExecStart=/usr/bin/python3 /root/SCRIPTS/agortex-webhook/webhook.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
