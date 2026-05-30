@@ -1,6 +1,9 @@
 [Unit]
 Description=Agortex Webhook — форма сайта → Telegram
 After=network.target
+# Не более 5 рестартов за 10 мин — защита от петли при OOM-kills
+StartLimitIntervalSec=600
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -11,7 +14,7 @@ Environment="AGORTEX_CHAT_ID=ВСТАВИТЬ_CHAT_ID"
 Environment="PORT=8080"
 ExecStart=/usr/bin/python3 /root/SCRIPTS/agortex-webhook/webhook.py
 Restart=always
-RestartSec=5
+RestartSec=15
 
 [Install]
 WantedBy=multi-user.target
