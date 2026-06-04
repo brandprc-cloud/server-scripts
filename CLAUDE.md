@@ -11,8 +11,8 @@
 1. `/home/claudeuser/projects/ai-clone/INDEX.md` — **КЛОН**: кто хозяин, как думает, как работать с ним
 2. `/home/claudeuser/projects/ai-clone/feedback/` — **ПРАВИЛА**: как вести себя в сессии
 3. `CLAUDE.md` этого файла — **СЕРВЕР**: карта проектов и инфраструктуры
-4. `projects/<проект>/CLAUDE.md` — **ПРОЕКТ**: правила конкретного репозитория
-5. `projects/<проект>/plans/<актуальный план>` — **ЗАДАЧА**: текущая фаза (если есть)
+4. `projects/<ПРОЕКТ>/CLAUDE.md` — **ПРОЕКТ**: правила конкретного проекта
+5. `projects/<ПРОЕКТ>/<суб-репо>/CLAUDE.md` — **МОДУЛЬ**: правила конкретного репозитория
 
 После чтения — одной строкой подтверди готовность. Не начинай задачу, жди следующего сообщения.
 
@@ -28,38 +28,45 @@
 
 Все проекты в `/home/claudeuser/projects/`.
 
-### Активные продукты
+### Три реальных проекта
 
-| Проект | Путь | Описание |
+| Проект | Путь | Что внутри |
 |---|---|---|
-| revivebase | `projects/revivebase/` | AI-платформа реактивации клиентов. Next.js, порт 3002 |
-| revivebase-app | `projects/revivebase-app/` | Расширенная версия: auth, billing, campaigns. Supabase + Stripe |
-| consulting-site | `projects/consulting-site/` | Сайт консалтинга Agortex |
-| agortex-site-v2 | `projects/agortex-site-v2/` | Основной сайт Agortex v2 |
-| agortex-partners | `projects/agortex-partners/` | Партнёрская программа |
-| reactivate-landing | `projects/reactivate-landing/` | Лендинг реактивации |
-| AI-SCHOOL | `projects/AI-SCHOOL/` | AI школа |
-| agortex-masterclass | `projects/agortex-masterclass/` | Мастер-класс |
-| consulting-aggregator | `projects/consulting-aggregator/` | Агрегатор консалтинговых услуг |
+| **AI-SCHOOL** | `projects/AI-SCHOOL/` | AI-школа. Next.js, Prisma, Docker |
+| **CONSULTING** | `projects/CONSULTING/` | Консалтинг / Agortex. 7 репозиториев |
+| **REVIVEBASE** | `projects/REVIVEBASE/` | AI-платформа реактивации клиентов. 5 репозиториев |
 
-### Документация и контекст
+### CONSULTING — суб-репозитории
 
-| Проект | Путь | Описание |
+| Репо | Путь |
+|---|---|
+| agortex-business | `projects/CONSULTING/agortex-business/` |
+| agortex-site-v2 | `projects/CONSULTING/agortex-site-v2/` |
+| agortex-masterclass | `projects/CONSULTING/agortex-masterclass/` |
+| agortex-partners | `projects/CONSULTING/agortex-partners/` |
+| consulting-site | `projects/CONSULTING/consulting-site/` |
+| consulting-aggregator | `projects/CONSULTING/consulting-aggregator/` |
+| consulting-plans | `projects/CONSULTING/consulting-plans/` |
+
+### REVIVEBASE — суб-репозитории
+
+| Репо | Путь |
+|---|---|
+| revivebase | `projects/REVIVEBASE/revivebase/` |
+| revivebase-app | `projects/REVIVEBASE/revivebase-app/` |
+| revivebase-docs | `projects/REVIVEBASE/revivebase-docs/` |
+| revivebase-lab | `projects/REVIVEBASE/revivebase-lab/` |
+| reactivate-landing | `projects/REVIVEBASE/reactivate-landing/` |
+
+### Инфраструктура и личные инструменты
+
+| Папка | Путь | Что это |
 |---|---|---|
 | ai-clone | `projects/ai-clone/` | Личная ОС Андрея — читается первой |
-| agortex-business | `projects/agortex-business/` | Бизнес-контекст: продукт, аудитория, экономика |
-| consulting-plans | `projects/consulting-plans/` | Планы и история консалтинга |
-| revivebase-docs | `projects/revivebase-docs/` | Документация ReviveBase по фазам |
-| revivebase-lab | `projects/revivebase-lab/` | Эксперименты и прототипы |
 | planner | `projects/planner/` | Личный планировщик задач и целей |
-
-### Инфраструктура и утилиты
-
-| Проект | Путь | Описание |
-|---|---|---|
-| server-scripts | `projects/server-scripts/` | Скрипты сервера: утренний брифинг, вечерний чекин, мониторинг |
-| sendscreen | `projects/sendscreen/` | Отправка скриншотов в Telegram |
-| claude-bot-backup | `projects/claude-bot-backup/` | Бэкап конфигурации Telegram-бота |
+| server-scripts | `projects/server-scripts/` | Скрипты сервера: брифинги, мониторинг, webhook |
+| sendscreen | `projects/sendscreen/` | Утилита: скриншоты → Telegram |
+| claude-bot-backup | `projects/claude-bot-backup/` | Архив конфигурации Telegram-бота |
 
 ---
 
@@ -67,11 +74,11 @@
 
 - **Пользователь сервера:** `claudeuser`
 - **Рабочая папка:** `/home/claudeuser/`
-- **GitHub org:** `brandprc-cloud` — все проекты здесь
-- **Nginx:** проксирует проекты на нужные порты
-- **ReviveBase:** systemd `revivebase-app.service`, порт 3002
+- **GitHub org:** `brandprc-cloud`
+- **SSH-ключ:** `/home/claudeuser/.ssh/github_brandprc`
+- **ReviveBase:** systemd `revivebase-app.service`, порт 3002, nginx на 80
 - **Telegram-бот:** `@vIbecodebot_bot`, токен в `~/.claude/channels/telegram/.env`
-- **Скрипты cron:** утренний брифинг 9:00 MSK, вечерний чекин 22:00 MSK
+- **Cron:** утренний брифинг 9:00 MSK, вечерний чекин 22:00 MSK
 
 ---
 
@@ -86,12 +93,12 @@
 
 ### Всегда
 - Отвечай на русском языке
-- Перед сложной задачей — прочитай CLAUDE.md проекта и актуальный план
-- Новую функцию — оформляй планом в `plans/` проекта
+- Перед задачей — прочитай CLAUDE.md проекта и суб-репо
+- Новую функцию — оформляй планом в `plans/` нужного репо
 - В конце сессии — рефлексия и обновление памяти клона
 
 ---
 
 ## Язык
 
-Всегда отвечай на русском языке. Код и комментарии — на усмотрение проекта.
+Всегда отвечать на русском языке.
