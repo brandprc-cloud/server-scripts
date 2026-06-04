@@ -7,7 +7,13 @@ import urllib.parse
 import json
 import os
 import re
+import ssl
 from datetime import datetime, timezone, timedelta
+
+# SSL-контекст: обход прокси с самоподписанным сертификатом
+SSL_CTX = ssl.create_default_context()
+SSL_CTX.check_hostname = False
+SSL_CTX.verify_mode = ssl.CERT_NONE
 
 TOKEN_FILE = os.path.expanduser("~/.claude/channels/telegram/.env")
 CHAT_ID = "6061411038"
@@ -24,7 +30,7 @@ def send_message(token, text):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     data = json.dumps({"chat_id": CHAT_ID, "text": text, "parse_mode": "HTML"}).encode()
     req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-    urllib.request.urlopen(req, timeout=10)
+    urllib.request.urlopen(req, timeout=10, context=SSL_CTX)
 
 def main():
     msk = timezone(timedelta(hours=3))
