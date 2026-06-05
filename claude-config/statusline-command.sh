@@ -1,11 +1,11 @@
 #!/bin/bash
 input=$(cat)
 
-python3 -c "
+echo "$input" | python3 -c "
 import json, sys
 
 try:
-    data = json.loads(sys.argv[1])
+    data = json.loads(sys.stdin.read())
 except Exception:
     sys.exit(0)
 
@@ -29,4 +29,4 @@ if cwd:
     parts.append(folder)
 
 print(' | '.join(parts), end='')
-" "$input"
+"

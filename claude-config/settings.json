@@ -1,8 +1,4 @@
 {
-  "statusLine": {
-    "type": "command",
-    "command": "bash /home/claudeuser/.claude/statusline-command.sh"
-  },
   "hooks": {
     "Stop": [
       {
@@ -24,5 +20,21 @@
         ]
       }
     ]
-  }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash /home/claudeuser/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "telegram@local-plugins": false
+  },
+  "extraKnownMarketplaces": {
+    "local-plugins": {
+      "source": {
+        "source": "directory",
+        "path": "/home/claudeuser/.claude/plugins/marketplaces/local-plugins"
+      }
+    }
+  },
+  "theme": "dark"
 }

@@ -25,5 +25,6 @@ metadata:
 - `revivebase-lab`, `revivebase-docs` — эксперименты и документация
 - `agortex-business`, `agortex-site-v2`, `agortex-masterclass`, `agortex-partners` — Agortex
 - `consulting-site`, `consulting-plans`, `consulting-aggregator` — консалтинг
-- `AI-SCHOOL`, `ai-clone`, `planner` — личные инструменты. Planner: файловая часть работает, бот (@vIbecodebot_bot) не работает — cron пустой, ~/.claude/channels/telegram/ нет. Настроен post-commit hook → автопуш на GitHub после каждого коммита.
+- `AI-SCHOOL` — **ЗАПУЩЕН** на `http://167.233.45.70:3003` и `http://ed.brezginandrei.ru:3003`. PM2 (ai-school-pg + ai-school), embedded-postgres в `.pgdata/`, Redis in-memory. Resend домен ed.brezginandrei.ru верифицирован, FROM=noreply@ed.brezginandrei.ru. Telegram бот @Core_ed_bot подключён. Admin: brandprc@gmail.com. Осталось: HTTPS → Telegram webhook → платёжная система.
+- `ai-clone`, `planner` — личные инструменты. Planner: файловая часть работает, бот (@vIbecodebot_bot) не работает — cron пустой, ~/.claude/channels/telegram/ нет. Настроен post-commit hook → автопуш на GitHub после каждого коммита.
 - `reactivate-landing`, `sendscreen`, `claude-bot-backup`, `server-scripts` — утилиты
