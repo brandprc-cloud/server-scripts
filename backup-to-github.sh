@@ -1,30 +1,38 @@
 #!/bin/bash
 # backup-to-github.sh
+# Бэкапит конфиг Claude и память в этот же репо (server-scripts → GitHub)
 set -e
 
-BACKUP_DIR="/root/BOT-BACKUP"
-cd "$BACKUP_DIR"
+REPO_DIR="/home/claudeuser/projects/server-scripts"
+CLAUDE_DIR="/home/claudeuser/.claude"
+MEMORY_DIR="$CLAUDE_DIR/projects/-home-claudeuser/memory"
 
-cp /root/CLAUDE.md ./CLAUDE.md 2>/dev/null || true
-cp /root/backup-to-github.sh ./backup-to-github.sh 2>/dev/null || true
-cp /root/start-telegram-bot.sh ./start-telegram-bot.sh 2>/dev/null || true
-cp /root/stop-notify-tg.sh ./stop-notify-tg.sh 2>/dev/null || true
-cp /root/telegram-watchdog.sh ./telegram-watchdog.sh 2>/dev/null || true
+cd "$REPO_DIR"
 
+# --- Claude config ---
 mkdir -p claude-config
-cp /root/.claude/settings.json ./claude-config/settings.json 2>/dev/null || true
-cp /root/.claude/security-guard.py ./claude-config/security-guard.py 2>/dev/null || true
-cp /root/.claude/notify-sound.sh ./claude-config/notify-sound.sh 2>/dev/null || true
+cp "$CLAUDE_DIR/settings.json" ./claude-config/settings.json 2>/dev/null || true
+cp "$CLAUDE_DIR/statusline-command.sh" ./claude-config/statusline-command.sh 2>/dev/null || true
 
-mkdir -p systemd
-cp /etc/systemd/system/claude-telegram.service ./systemd/claude-telegram.service 2>/dev/null || true
-cp /etc/systemd/system/claude-telegram.service.d/limits.conf ./systemd/limits.conf 2>/dev/null || true
+# --- Claude memory ---
+mkdir -p claude-memory
+cp "$MEMORY_DIR"/*.md ./claude-memory/ 2>/dev/null || true
 
-git add -A
+# --- Главный CLAUDE.md сервера ---
+cp /home/claudeuser/CLAUDE.md ./CLAUDE.md 2>/dev/null || true
+
+# --- Пуш ---
+git add \
+  claude-config/settings.json \
+  claude-config/statusline-command.sh \
+  claude-memory/ \
+  CLAUDE.md
+
 if git diff --cached --quiet; then
     echo "$(date): nothing changed, skip"
     exit 0
 fi
+
 git commit -m "backup $(date '+%Y-%m-%d %H:%M')"
-git push -u origin main
-echo "$(date): backup pushed"
+GIT_SSH_COMMAND="ssh -i /home/claudeuser/.ssh/github_brandprc" git push origin main
+echo "$(date): backup pushed to brandprc-cloud/server-scripts"
