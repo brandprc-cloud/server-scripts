@@ -23,13 +23,12 @@ metadata:
 
 ## Домен (настраивается)
 
-- **agortex.com** — смотрит на сервер 23.88.109.33, WordPress + Elementor (в планах)
+- **agortex.com** — DNS ещё не направлен на новый сервер (старый 23.88.109.33 скомпрометирован, не использовать)
 
-## Сервер 23.88.109.33 (внутренние)
+## Дашборды (нужно восстановить на новом сервере)
 
-- **23.88.109.33/agortex/dashboard.html** — дашборд карты проекта
-- **23.88.109.33/agortex/business.html** — бизнес-обзор
-- **23.88.109.33/agortex/partners-preview.html** — превью партнёрской страницы
+- dashboard.html и business.html есть в `projects/CONSULTING/consulting-site/public/`
+- tasks.json и business.json потеряны при переезде — нужно пересоздать
 
 ## Telegram-боты
 
