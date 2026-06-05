@@ -32,7 +32,7 @@
 
 | Проект | Путь | Что внутри |
 |---|---|---|
-| **AI-SCHOOL** | `projects/AI-SCHOOL/` | AI-школа. Next.js, Prisma, Docker |
+| **AI-SCHOOL** | `projects/AI-SCHOOL/` | Платформа онлайн-курса по AI/Claude. Разработка завершена (5 фаз). DNS настроен, email (Resend) подключён, Telegram-бот подключён. Осталось: настроить Prodamus (оплата). Порт 3003 |
 | **CONSULTING** | `projects/CONSULTING/` | Консалтинг / Agortex. 7 репозиториев |
 | **REVIVEBASE** | `projects/REVIVEBASE/` | AI-платформа реактивации клиентов. 5 репозиториев |
 | **AI-WORKSHOP** | `projects/AI-WORKSHOP/` | Тренинг по AI в Дубае. Андрей — продюсер, Арташес — эксперт |
@@ -64,6 +64,7 @@
 | Папка | Путь | Что это |
 |---|---|---|
 | ai-clone | `projects/ai-clone/` | Личная ОС Андрея — читается первой |
+| contractors | `projects/contractors/` | Подрядчики: профили, договоры, брифы по проектам |
 | planner | `projects/planner/` | Личный планировщик задач и целей |
 | server-scripts | `projects/server-scripts/` | Скрипты сервера: брифинги, мониторинг, webhook |
 | sendscreen | `projects/sendscreen/` | Утилита: скриншоты → Telegram |

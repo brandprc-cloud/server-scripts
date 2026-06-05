@@ -8,3 +8,4 @@
 - [Правила безопасности](feedback_security.md) — токены/секреты никогда не светить, предыдущий сервер взломали
 - [Боты Agortex](reference_agortex_bots.md) — правильные названия: @AgortexPartnersBot (партнёрский), @AgortexBot (клиентский)
 - [Ссылки Agortex](reference_agortex_links.md) — все живые URL: сайты, партнёрский кабинет, боты, сервер
+- [Структура подрядчиков](feedback_contractors_structure.md) — подрядчики в projects/contractors/, внутри подпапки по проектам
