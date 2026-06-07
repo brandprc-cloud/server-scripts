@@ -1,30 +1,30 @@
 #!/usr/bin/env python3
-import os
+import asyncio
 import logging
-from pathlib import Path
+import os
+import subprocess
 from datetime import datetime
+from pathlib import Path
+
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import anthropic
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 load_dotenv(Path(__file__).parent / ".env")
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 ALLOWED_USER_ID = int(os.getenv("ALLOWED_USER_ID", "6061411038"))
 
+CLAUDE_BIN = "/usr/bin/claude"
 PROJECTS_ROOT = Path("/home/claudeuser/projects")
 PLANNER = PROJECTS_ROOT / "planner"
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
-    handlers=[logging.StreamHandler()]
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
-
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 conversation_history: dict[int, list] = {}
 
@@ -42,9 +42,7 @@ SYSTEM_PROMPT = """Ты — личный ИИ-ассистент Андрея Б
 - Коротко и по делу. Без воды.
 - Всегда на русском языке.
 - Когда получаешь данные из файлов — форматируй читаемо, выдели главное.
-- Не придумывай то, чего нет в данных.
-- Если вопрос про задачи — используй данные из планировщика, не фантазируй.
-"""
+- Не придумывай то, чего нет в данных."""
 
 
 def read_file_safe(path: Path) -> str:
@@ -60,7 +58,8 @@ def read_open_tasks() -> str:
     for f in sorted(tasks_dir.glob("*.md")):
         content = read_file_safe(f)
         open_lines = [
-            l.strip() for l in content.split("\n")
+            l.strip()
+            for l in content.split("\n")
             if l.strip().startswith(("- [ ]", "- [!]", "- [~]"))
         ]
         if open_lines:
@@ -75,17 +74,52 @@ def read_brief_context() -> str:
     energy = read_file_safe(PLANNER / "энергия.md")
     if energy:
         last = [l for l in energy.split("\n") if l.strip()][-6:]
-        parts.append("**Энергия (последняя запись):**\n" + "\n".join(last))
+        parts.append("Энергия (последняя запись):\n" + "\n".join(last))
 
     today = datetime.now()
     month_file = PLANNER / "события" / f"{today.year}-{today.month:02d}.md"
     events = read_file_safe(month_file)
     if events:
-        parts.append(f"**События на {today.strftime('%d.%m.%Y')}:**\n" + events[:600])
+        parts.append(f"События на {today.strftime('%d.%m.%Y')}:\n" + events[:600])
 
-    parts.append("**Открытые задачи:**\n" + read_open_tasks())
+    parts.append("Открытые задачи:\n" + read_open_tasks())
 
     return "\n\n".join(parts)
+
+
+def build_prompt(history: list, new_message: str, extra_context: str = "") -> str:
+    lines = [SYSTEM_PROMPT, ""]
+    if history:
+        lines.append("История диалога:")
+        for msg in history[-10:]:
+            role = "Андрей" if msg["role"] == "user" else "Claude"
+            lines.append(f"{role}: {msg['content']}")
+        lines.append("")
+    if extra_context:
+        lines.append("Данные из файлов:")
+        lines.append(extra_context)
+        lines.append("")
+    lines.append(f"Андрей: {new_message}")
+    return "\n".join(lines)
+
+
+async def run_claude(prompt: str) -> str:
+    loop = asyncio.get_event_loop()
+
+    def _run():
+        result = subprocess.run(
+            [CLAUDE_BIN, "--print"],
+            input=prompt,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env={**os.environ, "HOME": "/home/claudeuser"},
+        )
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.strip() or "claude вернул ошибку")
+        return result.stdout.strip()
+
+    return await loop.run_in_executor(None, _run)
 
 
 def is_allowed(user_id: int) -> bool:
@@ -93,42 +127,13 @@ def is_allowed(user_id: int) -> bool:
 
 
 async def send_long(update: Update, text: str) -> None:
-    """Отправляет сообщение, разбивая на части если > 4000 символов."""
     limit = 4000
-    if len(text) <= limit:
-        try:
-            await update.message.reply_text(text, parse_mode="Markdown")
-        except Exception:
-            await update.message.reply_text(text)
-        return
     for i in range(0, len(text), limit):
-        chunk = text[i:i + limit]
+        chunk = text[i : i + limit]
         try:
             await update.message.reply_text(chunk, parse_mode="Markdown")
         except Exception:
             await update.message.reply_text(chunk)
-
-
-async def call_claude(user_id: int, user_message: str, extra_context: str = "") -> str:
-    history = conversation_history.get(user_id, [])
-    content = user_message
-    if extra_context:
-        content = f"{extra_context}\n\nЗапрос: {user_message}"
-    history.append({"role": "user", "content": content})
-    try:
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=2048,
-            system=SYSTEM_PROMPT,
-            messages=history,
-        )
-        reply = response.content[0].text
-        history.append({"role": "assistant", "content": reply})
-        conversation_history[user_id] = history[-20:]
-        return reply
-    except Exception as e:
-        logger.error("Anthropic API error: %s", type(e).__name__)
-        raise
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -160,23 +165,29 @@ async def brief(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     msg = await update.message.reply_text("Читаю данные...")
     ctx = read_brief_context()
+    user_id = update.effective_user.id
+    history = conversation_history.get(user_id, [])
     try:
-        reply = await call_claude(
-            update.effective_user.id,
+        prompt = build_prompt(
+            history,
             "Сделай утренний брифинг. Что важно сегодня? Топ-3 задачи по монетизации.",
             extra_context=ctx,
         )
+        reply = await run_claude(prompt)
+        history.append({"role": "user", "content": "утренний брифинг"})
+        history.append({"role": "assistant", "content": reply})
+        conversation_history[user_id] = history[-20:]
         await msg.delete()
         await send_long(update, reply)
-    except Exception:
-        await msg.edit_text("Ошибка при обращении к API. Попробуй снова.")
+    except Exception as e:
+        logger.error("brief error: %s", e)
+        await msg.edit_text("Ошибка при запросе к Claude. Проверь сессию: `claude --print 'ping'`")
 
 
 async def tasks(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not is_allowed(update.effective_user.id):
         return
-    task_text = read_open_tasks()
-    await send_long(update, task_text)
+    await send_long(update, read_open_tasks())
 
 
 async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -189,18 +200,25 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not is_allowed(update.effective_user.id):
         return
+    user_id = update.effective_user.id
+    history = conversation_history.get(user_id, [])
     try:
-        reply = await call_claude(update.effective_user.id, update.message.text)
+        prompt = build_prompt(history, update.message.text)
+        reply = await run_claude(prompt)
+        history.append({"role": "user", "content": update.message.text})
+        history.append({"role": "assistant", "content": reply})
+        conversation_history[user_id] = history[-20:]
         await send_long(update, reply)
-    except Exception:
-        await update.message.reply_text("Ошибка при обращении к API. Попробуй снова.")
+    except Exception as e:
+        logger.error("chat error: %s", e)
+        await update.message.reply_text(
+            "Ошибка при запросе к Claude. Проверь сессию: `claude --print 'ping'`"
+        )
 
 
 def main() -> None:
     if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError("TELEGRAM_BOT_TOKEN не задан в .env")
-    if not ANTHROPIC_API_KEY:
-        raise RuntimeError("ANTHROPIC_API_KEY не задан в .env")
 
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
@@ -210,7 +228,7 @@ def main() -> None:
     app.add_handler(CommandHandler("clear", clear))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 
-    logger.info("Claude personal bot started. Allowed user: %d", ALLOWED_USER_ID)
+    logger.info("Claude personal bot (CLI mode) started. Allowed user: %d", ALLOWED_USER_ID)
     app.run_polling(drop_pending_updates=True)
 
 
