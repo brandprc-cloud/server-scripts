@@ -26,6 +26,26 @@ def load_token():
                 return m.group(1)
     raise ValueError("TELEGRAM_BOT_TOKEN not found")
 
+def read_mentor_action():
+    journal_index = os.path.expanduser("~/projects/ai-clone/mastery/journal/INDEX.md")
+    try:
+        with open(journal_index) as f:
+            lines = f.readlines()
+        for line in reversed(lines):
+            if not line.strip().startswith("|"):
+                continue
+            cols = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cols) < 5:
+                continue
+            if "Дата" in cols[0] or "---" in cols[0]:
+                continue
+            action, done = cols[3], cols[4]
+            if "[ ]" in done and action and action != "—":
+                return action
+    except FileNotFoundError:
+        pass
+    return None
+
 def read_todays_events():
     msk = timezone(timedelta(hours=3))
     today = datetime.now(msk).strftime("%d.%m")
@@ -62,9 +82,15 @@ def main():
     events = read_todays_events()
     events_text = "\n".join(f"  • {e}" for e in events) if events else "  (событий нет)"
 
+    mentor_action = read_mentor_action()
+    mentor_block = (
+        f"\n\n🎯 <b>Обещание Ментору:</b>\n  {mentor_action}"
+    ) if mentor_action else ""
+
     msg = (
         f"☀️ <b>Доброе утро! {today_str}</b>\n\n"
-        f"📅 <b>События сегодня:</b>\n{events_text}\n\n"
+        f"📅 <b>События сегодня:</b>\n{events_text}"
+        f"{mentor_block}\n\n"
         f"Напиши мне <b>«план на сегодня»</b> — подготовлю брифинг с задачами по всем проектам "
         f"с учётом твоей энергии и ключевой цели (быстрая монетизация).\n\n"
         f"Или сначала скажи: во сколько лёг и энергия от 1 до 10?"
