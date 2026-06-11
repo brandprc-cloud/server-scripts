@@ -4,3 +4,7 @@
 *.pem
 *credentials*
 *secret*
+*.session
+*.log
+monitor-venv/
+__pycache__/

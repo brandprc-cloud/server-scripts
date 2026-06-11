@@ -10,7 +10,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 CHANNEL = "sotka2044"
-CHAT_ID = "6061411038"
+CHAT_ID = "-1003955860040"  # канал "Мониторинг каналов"
 TOKEN_FILE = Path.home() / ".claude/channels/telegram/.env"
 STATE_FILE = Path(__file__).parent / "state.json"
 LOG_FILE = Path(__file__).parent / "sotka-log.md"
@@ -171,9 +171,11 @@ def format_notification(posts):
     for p in posts[:3]:
         e = p["entities"]
         lines.append(f"━━━━━━━━━━━━━━━")
-        preview = (p["text"][:200] + "…") if len(p["text"]) > 200 else p["text"]
-        if preview:
+        if p["text"]:
+            preview = (p["text"][:200] + "…") if len(p["text"]) > 200 else p["text"]
             lines.append(f"📝 {preview}")
+        else:
+            lines.append(f"🖼 Медиапост (фото/видео)")
         if e["contacts"]:
             lines.append(f"👤 {', '.join(e['contacts'])}")
         if e["opportunities"]:
@@ -194,7 +196,7 @@ def main():
     if not posts:
         return
 
-    new_posts = [p for p in posts if p["id"] > state["last_id"] and p["text"].strip()]
+    new_posts = [p for p in posts if p["id"] > state["last_id"]]
 
     # При первом запуске — сохраняем текущий максимум, не уведомляем
     if state["last_id"] == 0:

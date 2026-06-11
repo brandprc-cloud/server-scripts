@@ -4,10 +4,9 @@ import logging
 import os
 import re
 import subprocess
-from datetime import datetime, time
+from datetime import datetime, time, timezone, timedelta
 from pathlib import Path
 
-import pytz
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import (
@@ -29,7 +28,8 @@ ROOT        = Path("/home/claudeuser")
 PROJECTS    = ROOT / "projects"
 PLANNER     = PROJECTS / "planner"
 AI_CLONE    = PROJECTS / "ai-clone"
-MSK         = pytz.timezone("Europe/Moscow")
+UPLOADS_DIR = AI_CLONE / "_input"
+MSK         = timezone(timedelta(hours=3))  # UTC+3 (Москва)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -291,7 +291,7 @@ async def run_claude(prompt: str) -> str:
 
     def _run():
         result = subprocess.run(
-            [CLAUDE_BIN, "--print"],
+            [CLAUDE_BIN, "--print", "--dangerously-skip-permissions"],
             input=prompt,
             capture_output=True,
             text=True,
@@ -416,6 +416,22 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("История диалога сброшена.")
 
 
+async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not is_allowed(update.effective_user.id):
+        return
+    UPLOADS_DIR.mkdir(exist_ok=True)
+    document = update.message.document
+    ts = datetime.now(MSK).strftime("%Y%m%d-%H%M%S")
+    filename = f"{ts}-{document.file_name}"
+    save_path = UPLOADS_DIR / filename
+    tg_file = await context.bot.get_file(document.file_id)
+    await tg_file.download_to_drive(str(save_path))
+    await update.message.reply_text(
+        f"Файл сохранён:\n`{save_path}`",
+        parse_mode="Markdown"
+    )
+
+
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not is_allowed(update.effective_user.id):
         return
@@ -475,6 +491,7 @@ def main() -> None:
     app.add_handler(CommandHandler("tasks", tasks))
     app.add_handler(CommandHandler("add", add_task))
     app.add_handler(CommandHandler("clear", clear))
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 
     # Авто-брифинг в 9:00 MSK каждый день
